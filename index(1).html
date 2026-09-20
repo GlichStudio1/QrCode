@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Kod Oluşturucu</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Arial,sans-serif}
+body{
+  min-height:100vh;
+  background:#0f172a;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  color:#111827;
+}
+.app{
+  width:100%;
+  max-width:620px;
+  background:#fff;
+  border-radius:22px;
+  padding:28px;
+  box-shadow:0 18px 50px rgba(0,0,0,.35);
+}
+h1{text-align:center;margin:0 0 8px}
+.subtitle{text-align:center;color:#64748b;margin:0 0 25px}
+label{display:block;font-weight:bold;margin-bottom:9px}
+textarea{
+  width:100%;
+  min-height:140px;
+  padding:15px;
+  border:2px solid #e2e8f0;
+  border-radius:13px;
+  resize:vertical;
+  font:16px Arial,sans-serif;
+  outline:none;
+}
+textarea:focus{border-color:#2563eb}
+.settings{margin-top:18px}
+select{
+  width:100%;
+  padding:12px;
+  border:2px solid #e2e8f0;
+  border-radius:10px;
+  background:#fff;
+  font-size:15px;
+  outline:none;
+}
+.generate{
+  width:100%;
+  margin-top:18px;
+  padding:15px;
+  border:0;
+  border-radius:12px;
+  background:#2563eb;
+  color:#fff;
+  font-size:17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.generate:hover{background:#1d4ed8}
+.message{
+  display:none;
+  margin-top:14px;
+  padding:12px;
+  border-radius:10px;
+  text-align:center;
+  font-size:14px;
+}
+.success{background:#dcfce7;color:#166534}
+.warning{background:#fff7ed;color:#c2410c}
+.result{
+  text-align:center;
+  border-top:1px solid #e2e8f0;
+  margin-top:25px;
+  padding-top:25px;
+}
+.result h2{margin:0 0 18px}
+#qrcode{
+  display:inline-block;
+  padding:12px;
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 7px 22px rgba(0,0,0,.12);
+}
+#qrcode canvas,#qrcode img{display:block}
+.actions{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+.btn{
+  border:0;
+  border-radius:10px;
+  padding:12px 17px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.download{background:#16a34a;color:#fff}
+.copy{background:#e2e8f0;color:#111827}
+.clear{background:#fee2e2;color:#dc2626}
+@media(max-width:600px){
+  body{padding:10px}
+  .app{padding:20px;border-radius:18px}
+  .actions{flex-direction:column}
+  .btn{width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <h1>QR Kod Oluşturucu</h1>
+  <p class="subtitle">Linkini QR koda dönüştür</p>
+
+  <label for="linkInput">Link</label>
+  <textarea id="linkInput" placeholder="https://ornek.com"></textarea>
+
+  <div class="settings">
+    <label for="qrSize">QR Boyutu</label>
+    <select id="qrSize">
+      <option value="180">180 × 180</option>
+      <option value="256" selected>256 × 256</option>
+      <option value="320">320 × 320</option>
+      <option value="400">400 × 400</option>
+      <option value="512">512 × 512</option>
+    </select>
+  </div>
+
+  <button class="generate" onclick="generateQR()">QR Kod Oluştur</button>
+
+  <div id="message" class="message"></div>
+
+  <div class="result">
+    <h2>QR Kod</h2>
+    <div id="qrcode"></div>
+
+    <div class="actions">
+      <button class="btn download" onclick="downloadQR()">QR'ı İndir</button>
+      <button class="btn copy" onclick="copyLink()">Linki Kopyala</button>
+      <button class="btn clear" onclick="clearAll()">Temizle</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentLink = "";
+
+function generateQR(){
+  const link = document.getElementById("linkInput").value.trim();
+
+  if(!link){
+    showMessage("Lütfen bir link gir.","warning");
+    return;
+  }
+
+  if(!/^https?:\/\/\S+$/i.test(link)){
+    showMessage("Geçerli bir link gir. Örnek: https://ornek.com","warning");
+    return;
+  }
+
+  const qrBox = document.getElementById("qrcode");
+  qrBox.innerHTML = "";
+
+  const size = parseInt(document.getElementById("qrSize").value,10);
+
+  try{
+    new QRCode(qrBox,{
+      text:link,
+      width:size,
+      height:size,
+      colorDark:"#000000",
+      colorLight:"#ffffff",
+      correctLevel:QRCode.CorrectLevel.M
+    });
+
+    currentLink = link;
+    showMessage("QR kod oluşturuldu!","success");
+  }catch(error){
+    currentLink = "";
+    showMessage("QR kod oluşturulamadı.","warning");
+  }
+}
+
+function downloadQR(){
+  const canvas = document.querySelector("#qrcode canvas");
+
+  if(!canvas){
+    showMessage("Önce QR kod oluştur.","warning");
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.download = "qr-kod.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+async function copyLink(){
+  if(!currentLink){
+    showMessage("Önce QR kod oluştur.","warning");
+    return;
+  }
+
+  try{
+    await navigator.clipboard.writeText(currentLink);
+    showMessage("Link kopyalandı!","success");
+  }catch(error){
+    const temp = document.createElement("textarea");
+    temp.value = currentLink;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    temp.remove();
+    showMessage("Link kopyalandı!","success");
+  }
+}
+
+function clearAll(){
+  document.getElementById("linkInput").value = "";
+  document.getElementById("qrcode").innerHTML = "";
+  currentLink = "";
+  hideMessage();
+}
+
+function showMessage(text,type){
+  const box = document.getElementById("message");
+  box.textContent = text;
+  box.className = "message " + type;
+  box.style.display = "block";
+}
+
+function hideMessage(){
+  document.getElementById("message").style.display = "none";
+}
+</script>
+
+</body>
+</html>
